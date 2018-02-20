@@ -1,0 +1,7 @@
+on fs
+    start fixlinks
+
+service fixlinks /sbin/fixlinks.sh
+    oneshot
+    disabled
+    seclabel u:r:recovery:s0

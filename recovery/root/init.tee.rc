@@ -1,0 +1,40 @@
+on init
+#mount secure storage partition for teeos
+     mkdir /sec_storage
+     mount ext4 /dev/block/bootdevice/by-name/secure_storage /sec_storage nosuid nodev noatime wait crypt discard,auto_da_alloc,mblk_io_submit,data=journal,context=u:object_r:teecd_data_file:s0
+     chown root root /sec_storage
+     chmod 600 /sec_storage
+
+on init
+#add for TrustedCore driver
+    chmod 0400 /dev/hisi_teelog
+
+#secure os tee agent
+service teecd /vendor/bin/teecd
+    class core
+    user root
+    group root readproc
+    seclabel u:r:tee:s0
+
+#system_teecd
+service system_teecd /system/bin/system_teecd
+    socket tui_daemon stream 660 root system
+    socket tee-multi-user stream 660 root system
+    class core
+    user root
+    group root readproc
+
+service teelogcat /vendor/bin/tlogcat -f
+    class late_start
+    user root
+    group system
+    disabled
+    seclabel u:r:hisilogcat:s0
+
+# Start debug services only if persist.sys.huawei.debug.on is set to 1
+on property:persist.sys.huawei.debug.on=1
+start teelogcat
+
+# Stop debug services if persist.sys.huawei.debug.on is set to 0
+on property:persist.sys.huawei.debug.on=0
+stop teelogcat
